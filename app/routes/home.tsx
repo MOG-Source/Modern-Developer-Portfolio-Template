@@ -1,4 +1,10 @@
-import type { PostMeta, Project } from '~/types';
+import type {
+  PostMeta,
+  Project,
+  StrapiPost,
+  StrapiProject,
+  StrapiResponse,
+} from '~/types';
 import type { Route } from './+types/home';
 import FeaturedProjects from '~/components/FeaturedProjects';
 import AboutPreview from '~/components/AboutPreview';
@@ -16,14 +22,40 @@ export async function loader({
 }: Route.LoaderArgs): Promise<{ projects: Project[]; posts: PostMeta[] }> {
   const url = new URL('/posts-meta.json', request.url);
   let [projectRes, postRes] = await Promise.all([
-    fetch(`${import.meta.env.VITE_API_URL}/projects`),
-    fetch(url.href),
+    fetch(
+      `${import.meta.env.VITE_API_URL}/projects?filters[featured][$eq]=true&populate=*`,
+    ),
+    fetch(`${import.meta.env.VITE_API_URL}/posts?sort[0]=date:desc&populate=*`),
   ]);
   if (!postRes.ok || !projectRes.ok) throw new Error('Failed To Fetch Data');
-  let [projects, posts] = await Promise.all([
-    projectRes.json(),
-    postRes.json(),
-  ]);
+  let postsRes: StrapiResponse<StrapiPost> = await postRes.json();
+  let ProjectsJson: StrapiResponse<StrapiProject> = await projectRes.json();
+  let projects = ProjectsJson.data.map((item) => {
+    return {
+      id: item.id,
+      documentId: item.documentId,
+      title: item.title,
+      description: item.description,
+      image: item.image?.url ? `${item.image.url}` : '/images/no-image.png',
+      url: item.url,
+      date: item.date,
+      category: item.category,
+      featured: item.featured,
+    };
+  });
+
+  let posts = postsRes.data.map((item) => {
+    return {
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      image: item.image?.url ? `${item.image.url}` : '/images/no-image.png',
+      date: item.date,
+      body: item.body,
+      excerpt: item.excerpt,
+    };
+  });
+
   return { projects, posts };
 }
 

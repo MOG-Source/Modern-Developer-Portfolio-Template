@@ -1,39 +1,46 @@
 import type { Route } from './+types/blogDetails';
 import Markdown from 'react-markdown';
 import { Link } from 'react-router';
-import type { PostMeta } from '~/types';
+import type { StrapiPost, StrapiResponse } from '~/types';
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { slug } = params;
-  let url = new URL('/posts-meta.json', request.url);
-
-  let res = await fetch(url.href);
+  const res = await fetch(
+    `${import.meta.env.VITE_API_URL}/posts?filters[slug][$eq]=${slug}&populate=image`,
+  );
   if (!res.ok) throw new Error('Failed To Fetch Data');
+  let json: StrapiResponse<StrapiPost> = await res.json();
 
-  const data = await res.json();
-
-  let post = data.find((item: PostMeta) => item.slug === slug);
-  console.log(post);
-  if (!post) throw new Response('Not Found', { status: 404 });
-
-  let markdown = await import(`../posts/${slug}.md?raw`);
-
-  return {
-    post,
-    markdown: markdown.default,
+  if (!json.data.length) throw new Response('Not Found', { status: 404 });
+  let item = json.data[0];
+  let post = {
+    id: item.id,
+    slug: item.slug,
+    excerpt: item.excerpt,
+    title: item.title,
+    date: item.date,
+    body: item.body,
+    image: item.image?.url ? `${item.image.url}` : '/images/no-image.png',
   };
+
+  return { post };
 }
 
 const BlogDetailsPage = ({ loaderData }: Route.ComponentProps) => {
-  let { post, markdown } = loaderData;
+  let { post } = loaderData;
   return (
     <div className="max-w-3xl mx-auto px-6 py-12 bg-gray-900">
       <h1 className="text-3xl font-bold text-blue-400 mb-2">{post.title}</h1>
       <p className="text-gray-400 text-sm mb-6">
         {new Date(post.date).toDateString()}
       </p>
+      <img
+        src={post.image}
+        alt={post.title}
+        className="w-ful height-48 object-cover mb-4"
+      />
       <div className="prose prose-invert max-w-none mb-12">
-        <Markdown>{markdown}</Markdown>
+        <Markdown>{post.body}</Markdown>
       </div>
       <Link
         to="/blog"

@@ -5,7 +5,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
   return (
     <Link
       className="block transition transform duration-300 hover:scale-[1.02]"
-      to={`/projects/${project.id}`}
+      to={`/projects/${project.documentId}`}
     >
       <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden shoadow-sm transition hover:shadow-md">
         <img

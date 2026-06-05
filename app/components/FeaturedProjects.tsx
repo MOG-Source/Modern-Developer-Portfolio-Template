@@ -7,14 +7,14 @@ type FeaturedProjectsProps = {
   count: number;
 };
 const FeaturedProjects = ({ projects, count = 4 }: FeaturedProjectsProps) => {
-  let featured = projects.filter((p) => p.featured).slice(0, count);
+  if (projects.length === 0 || count === 0) return null;
   return (
     <section>
       <h2 className="text-2xl text-gray-200 font-bold mb-6">
         🌟Featured Projects
       </h2>
       <div className="grid gap-6 sm:grid-cols-2">
-        {featured.map((project) => (
+        {projects.map((project) => (
           <ProjectCard key={project.id} project={project} />
         ))}
       </div>
